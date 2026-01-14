@@ -1,0 +1,7 @@
+# Polymarket 交易和余额查询基础依赖
+
+# Polymarket CLOB API 客户端
+py-clob-client>=0.34.1
+
+# 环境变量管理
+python-dotenv>=1.2.1
