@@ -1,5 +1,24 @@
-event,timestamp,buy_pick,buy_size,buy_best_ask,results
-"Bitcoin Up or Down - January 13, 4:00AM-4:15AM ET",2026-01-13 17:10:00,UP,2131.5,0.98,
-"Bitcoin Up or Down - January 13, 4:15AM-4:30AM ET",2026-01-13 17:27:53,UP,311.33,0.95,
-"Bitcoin Up or Down - January 13, 4:30AM-4:45AM ET",2026-01-13 17:40:00,DOWN,1908.09,0.97,
-"Bitcoin Up or Down - January 13, 4:45AM-5:00AM ET",2026-01-13 17:56:45,UP,1041.92,0.95,
+event,timestamp,time_left,buy_pick,buy_size,buy_best_ask,final,results
+"Bitcoin Up or Down - January 13, 10:45AM-11:00AM ET",2026-01-13 23:55:09,291,UP,284.24,0.95,UP,WIN
+"Bitcoin Up or Down - January 13, 11:00AM-11:15AM ET",2026-01-14 00:14:15,45,DOWN,3382.52,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 11:15AM-11:30AM ET",2026-01-14 00:27:14,166,DOWN,125.0,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 11:30AM-11:45AM ET",2026-01-14 00:40:00,300,UP,3220.32,0.99,UP,WIN
+"Bitcoin Up or Down - January 13, 11:45AM-12:00PM ET",2026-01-14 00:55:48,252,UP,46.41,0.95,DOWN,LOSE
+"Bitcoin Up or Down - January 13, 11:45AM-12:00PM ET",2026-01-14 00:58:58,62,DOWN,1455.52,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 12:00PM-12:15PM ET",2026-01-14 01:11:36,204,DOWN,2133.42,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 12:15PM-12:30PM ET",2026-01-14 01:28:20,100,UP,313.16,0.95,UP,WIN
+"Bitcoin Up or Down - January 13, 12:30PM-12:45PM ET",2026-01-14 01:40:00,300,DOWN,1520.32,0.96,DOWN,WIN
+"Bitcoin Up or Down - January 13, 12:45PM-1:00PM ET",2026-01-14 01:56:38,202,DOWN,1356.88,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 1:00PM-1:15PM ET",2026-01-14 02:10:00,300,UP,1332.39,0.95,UP,WIN
+"Bitcoin Up or Down - January 13, 5:30AM-5:45AM ET",2026-01-13 18:41:08,232,DOWN,282.0,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 5:45AM-6:00AM ET",2026-01-13 18:57:03,177,UP,259.88,0.96,UP,WIN
+"Bitcoin Up or Down - January 13, 6:00AM-6:15AM ET",2026-01-13 19:11:22,218,UP,1096.28,0.95,UP,WIN
+"Bitcoin Up or Down - January 13, 6:15AM-6:30AM ET",2026-01-13 19:29:53,7,DOWN,64.53,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 6:30AM-6:45AM ET",2026-01-13 19:40:00,300,DOWN,18.0,0.97,DOWN,WIN
+"Bitcoin Up or Down - January 13, 6:45AM-7:00AM ET",2026-01-13 19:57:59,121,DOWN,125.44,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 7:00AM-7:15AM ET",2026-01-13 20:13:52,68,DOWN,250.02,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 7:15AM-7:30AM ET",2026-01-13 20:25:00,300,UP,1842.49,0.98,UP,WIN
+"Bitcoin Up or Down - January 13, 7:30AM-7:45AM ET",2026-01-13 20:42:34,146,UP,844.01,0.95,UP,WIN
+"Bitcoin Up or Down - January 13, 7:45AM-8:00AM ET",2026-01-13 20:56:10,230,DOWN,129.42,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 8:00AM-8:15AM ET",2026-01-13 21:11:08,232,DOWN,2282.08,0.95,DOWN,WIN
+"Bitcoin Up or Down - January 13, 8:15AM-8:30AM ET",2026-01-13 21:27:13,167,UP,1962.8,0.95,UP,WIN
