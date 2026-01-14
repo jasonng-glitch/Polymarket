@@ -1,0 +1,5 @@
+event,timestamp,buy_pick,buy_size,buy_best_ask,results
+"Bitcoin Up or Down - January 13, 4:00AM-4:15AM ET",2026-01-13 17:10:00,UP,2131.5,0.98,
+"Bitcoin Up or Down - January 13, 4:15AM-4:30AM ET",2026-01-13 17:27:53,UP,311.33,0.95,
+"Bitcoin Up or Down - January 13, 4:30AM-4:45AM ET",2026-01-13 17:40:00,DOWN,1908.09,0.97,
+"Bitcoin Up or Down - January 13, 4:45AM-5:00AM ET",2026-01-13 17:56:45,UP,1041.92,0.95,
