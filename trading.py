@@ -128,6 +128,8 @@ async def place_order(
     )
     
     # 创建并提交订单
+    tick = client.get_tick_size(token_id) # check token_id validity
+    print("tick_size:", tick)
     response = await client.create_and_post_order(order_args)
     
     return response
@@ -138,20 +140,30 @@ async def main():
     # 创建客户端
     client = await create_client()
     
-    # 示例：下单（请修改为实际的参数）
-    # token_id = hex(83611158965142644032342884775225842534369349471539204930193487214925429417037)  # 替换为实际的 token ID
-    token_id = "0x184d2a8baad696ea1c79dd126a5270287444fd310e7ab401b48cd6884c075d0c"
-    response = await place_order(
-        client=client,
-        token_id=token_id,
-        side="BUY",
-        price=0.1,
-        size=0.1
-    )
-    print(f"订单已提交! ID: {response.get('orderID', response)}")
-    
-    print("交易脚本已准备好")
-    print("请取消注释示例代码并填入实际参数来下单")
+    import json
+    with open("tradable_tokens.json", 'r') as file:
+        data = json.load(file)
+
+    # Loop through the data and print each token_id
+    for entry in data:
+        try:
+            token_id = entry["token_id"]
+            # 示例：下单（请修改为实际的参数）
+            # token_id = ""  # 替换为实际的 token ID
+            # token_id = hex(int("2853768819561879023657600399360829876689515906714535926781067187993853038980"))
+            response = await place_order(
+                client=client,
+                token_id=token_id,
+                side="BUY",
+                price=0.99,
+                size=5
+            )
+            print(f"订单已提交! ID: {response.get('orderID', response)}")
+            
+            print("交易脚本已准备好")
+            print("请取消注释示例代码并填入实际参数来下单")
+        except Exception as e:
+            print(f"E: {e}")
 
 
 if __name__ == "__main__":
