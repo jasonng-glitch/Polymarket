@@ -111,9 +111,11 @@ class WebSocketOrderBook:
         self.seen_pick = {"UP": False, "DOWN": False}
         self.event_ended = False
         self.terminal_count = 0
+        self.alarm = False
 
     def on_message(self, ws, message):
         # Calculate the next 15-minute mark and the remaining mark time in seconds
+        
         if not self.event_ended:
             now = datetime.now()
             minutes_past = now.minute
@@ -128,7 +130,11 @@ class WebSocketOrderBook:
             cal_time_left = int((next_time - now).total_seconds())
             if cal_time_left == 0:
                 self.event_ended = True
-            print(f"Next: {cal_time_left}s, Message: {message}")
+            if not self.alarm and cal_time_left % 60 == 0: # remind every minute
+                print(f"Next: {cal_time_left}s")
+                self.alarm = True
+            if cal_time_left % 60 == 1: 
+                self.alarm = False
         else: 
             print(f"Event should have ended. Message: {message}")
             print("→ restarting")
@@ -157,30 +163,33 @@ class WebSocketOrderBook:
                 self.current_sec = now_sec
                 self.seen_pick = {"UP": False, "DOWN": False}
 
-            for change in message["price_changes"]:
-                if change["side"] != "BUY":
-                    continue
-                
-                buy_asset_id, buy_price, buy_size, buy_best_bid, buy_best_ask = change["asset_id"], change["price"], change["size"], change["best_bid"], change["best_ask"]
-                buy_pick = "UP" if buy_asset_id == self.data[0] else "DOWN" if buy_asset_id == self.data[1] else print("asset_id does not match any of the input clobTokenIds")
-                
-                # already recorded this pick in this second
-                if self.seen_pick[buy_pick]:
-                    continue
+            if 'price_changes' in message:
+                for change in message["price_changes"]:
+                    if change["side"] != "BUY":
+                        continue
+                    
+                    buy_asset_id, buy_price, buy_size, buy_best_bid, buy_best_ask = change["asset_id"], change["price"], change["size"], change["best_bid"], change["best_ask"]
+                    buy_pick = "UP" if buy_asset_id == self.data[0] else "DOWN" if buy_asset_id == self.data[1] else print("asset_id does not match any of the input clobTokenIds")
+                    
+                    # already recorded this pick in this second
+                    if self.seen_pick[buy_pick]:
+                        continue
 
-                # if not, process and mark as seen 
-                self.seen_pick[buy_pick] = True
+                    # if not, process and mark as seen 
+                    self.seen_pick[buy_pick] = True
 
-                dt = datetime.fromtimestamp(int(message["timestamp"]) / 1000, tz=UTC8)
-                timestamp = dt.strftime("%Y-%m-%d %H:%M:%S")
+                    dt = datetime.fromtimestamp(int(message["timestamp"]) / 1000, tz=UTC8)
+                    timestamp = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-                # time_left = (15 - (datetime.now().minute % 15)) * 60 - datetime.now().second # wrt real world time
-                time_left = round((get_next_quarter(dt) - dt).total_seconds()) # wrt given timestamp
+                    # time_left = (15 - (datetime.now().minute % 15)) * 60 - datetime.now().second # wrt real world time
+                    time_left = round((get_next_quarter(dt) - dt).total_seconds()) # wrt given timestamp
 
-                with open(csv_file, mode="a", newline="") as file:
-                    writer = csv.writer(file)
-                    writer.writerow([timestamp, time_left, self.event_name, message["event_type"], buy_pick, buy_price, buy_size, buy_best_bid, buy_best_ask])
-                
+                    print(f"{timestamp} | {time_left}s left | {self.event_name} | {message['event_type']} | {buy_pick} | Price: {buy_price} | Size: {buy_size} | Best Bid: {buy_best_bid} | Best Ask: {buy_best_ask}")
+                    with open(csv_file, mode="a", newline="") as file:
+                        writer = csv.writer(file)
+                        writer.writerow([timestamp, time_left, self.event_name, message["event_type"], buy_pick, buy_price, buy_size, buy_best_bid, buy_best_ask])
+            # else if book get ltd?
+
 
             # market, price_changes, timestamp, event_type = message["market"], message["price_changes"], datetime.fromtimestamp(int(message["timestamp"])/1000, tz=UTC8).strftime("%Y-%m-%d %H:%M:%S"), message["event_type"]
             # buy_side, sell_side = next(d for d in price_changes if d['side'] == 'BUY'), next(d for d in price_changes if d['side'] == 'SELL')
@@ -199,10 +208,10 @@ class WebSocketOrderBook:
 
         finally:
             self.terminal_count += 1
-            if self.terminal_count % 100 == 0: 
-                print("self.terminal_count:", self.terminal_count)
+            # if self.terminal_count % 100 == 0: 
+            #     print("self.terminal_count:", self.terminal_count)
             if self.terminal_count % 1000 == 0: #flush the output section per 100 messages
-                clear_output(wait=True)
+                # clear_output(wait=True)
                 self.terminal_count = 0 
         
 
@@ -258,7 +267,7 @@ class WebSocketOrderBook:
 
 
 if __name__ == "__main__":
-    csv_file = 'listening.csv' 
+    csv_file = '../listening.csv' # script to auto get next index
     create_csv(csv_file)
     
     url = "wss://ws-subscriptions-clob.polymarket.com"
@@ -267,7 +276,7 @@ if __name__ == "__main__":
     api_secret = ""
     api_passphrase = ""
 
-    r, suffix = 1, "1768437900" # put the first bitcoin 15 min market suffix here, e.g. https://polymarket.com/event/btc-updown-15m-1768266900 <-- this
+    r, suffix = 1, "1768440600" # put the first bitcoin 15 min market suffix here, e.g. https://polymarket.com/event/btc-updown-15m-1768266900 <-- this
     while True:
         suffix = get_next_suffix(r, suffix)
         slug = f"btc-updown-15m-{suffix}"
