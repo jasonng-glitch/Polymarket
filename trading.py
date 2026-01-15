@@ -8,6 +8,8 @@ from py_clob_client.order_builder.constants import BUY, SELL
 import asyncio
 import os
 from dotenv import load_dotenv
+import requests
+import json
 
 # 加载环境变量
 load_dotenv()
@@ -45,6 +47,32 @@ def find_token_id(market_name: str = None, market_id: str = None, outcome: str =
         return None
     except Exception:
         return None
+
+
+def get_clobTokenIds_from_slug(slug):
+    url_w_id = f"https://gamma-api.polymarket.com/events/slug/{slug}"
+
+    event = requests.get(url_w_id).json()
+
+    # print(json.dumps(event, indent=2, ensure_ascii=False))
+    print(f"Event: {event['id']}, {event['title']}")
+
+    markets = event['markets']
+    print(f"Markets in this event: {len(markets)} with id {[m['id'] for m in markets]}")
+
+    for i, market in enumerate(markets):
+        market_id = market['id']
+        url_w_id = f"https://gamma-api.polymarket.com/markets/{market_id}"
+
+        market = requests.get(url_w_id).json()
+        clobTokenIds = json.loads(market['clobTokenIds']) # returns as str, so convert it back to json
+        
+        print(f"Market's enableOrderBook: {market['enableOrderBook']}")
+        print(f"clobTokenIds in market {market_id}: {clobTokenIds}")
+        
+        assert len(clobTokenIds) == 2
+
+    return clobTokenIds[0], clobTokenIds[1], market['conditionId'], event['title']
 
 
 async def create_client() -> ClobClient:
@@ -115,6 +143,7 @@ async def place_order(
     if isinstance(token_id, int):
         token_id = hex(token_id)
     elif isinstance(token_id, str) and token_id.isdigit():
+        print("here")
         token_id = hex(int(token_id))
     elif not isinstance(token_id, str) or not token_id.startswith("0x"):
         raise ValueError(f"token_id 格式不正确: {token_id}")
@@ -128,8 +157,8 @@ async def place_order(
     )
     
     # 创建并提交订单
-    tick = client.get_tick_size(token_id) # check token_id validity
-    print("tick_size:", tick)
+    print("token_id:", type(token_id), token_id)
+    print("tick_size:", client.get_tick_size(token_id)) # check token_id validity
     response = await client.create_and_post_order(order_args)
     
     return response
@@ -139,31 +168,48 @@ async def main():
     """主函数 - 示例用法"""
     # 创建客户端
     client = await create_client()
-    
+    print("client:", client.get_market("0xaf308988bd42925d5529db47fd7fd1d8be05633043d27ec1c47f5bc7384fff87"))
     import json
     with open("tradable_tokens.json", 'r') as file:
         data = json.load(file)
 
-    # Loop through the data and print each token_id
-    for entry in data:
-        try:
-            token_id = entry["token_id"]
-            # 示例：下单（请修改为实际的参数）
-            # token_id = ""  # 替换为实际的 token ID
-            # token_id = hex(int("2853768819561879023657600399360829876689515906714535926781067187993853038980"))
-            response = await place_order(
-                client=client,
-                token_id=token_id,
-                side="BUY",
-                price=0.99,
-                size=5
-            )
-            print(f"订单已提交! ID: {response.get('orderID', response)}")
+    
+    # 示例：下单（请修改为实际的参数）
+    # token_id = "0xeb7bb6713e4166194d2a720fe3a3859391fc53f4a9b1b1a535506a5e551e6321"  # 替换为实际的 token ID
+    # token_id = hex(int("2853768819561879023657600399360829876689515906714535926781067187993853038980"))
+    slug = "bitcoin-up-or-down-on-january-15"
+    clobTokenId, clobTokenId2, conditionId, event_name = get_clobTokenIds_from_slug(slug)
+    hex_clobTokenId, hex_clobTokenId2 = hex(int(clobTokenId)), hex(int(clobTokenId2))
+    print(f"{'-'*70}\n {conditionId}\n {clobTokenId}, {hex_clobTokenId}, \n {clobTokenId2}, {hex_clobTokenId2}")
+    print(f"{'-'*70}\nclient: {client.get_market(conditionId)}")
+
+    response = await place_order(
+        client=client,
+        token_id=hex_clobTokenId,
+        side="BUY",
+        price=0.99,
+        size=5
+    )
+    print(f"订单已提交! ID: {response.get('orderID', response)}")
+    
+    print("交易脚本已准备好")
+    print("请取消注释示例代码并填入实际参数来下单")
+
+    # for id in [conditionId, clobTokenId, hex_clobTokenId, clobTokenId2, hex_clobTokenId2]:
+    #     try:
+    #         response = await place_order(
+    #             client=client,
+    #             token_id=id,
+    #             side="BUY",
+    #             price=0.99,
+    #             size=5
+    #         )
+    #         print(f"订单已提交! ID: {response.get('orderID', response)}")
             
-            print("交易脚本已准备好")
-            print("请取消注释示例代码并填入实际参数来下单")
-        except Exception as e:
-            print(f"E: {e}")
+    #         print("交易脚本已准备好")
+    #         print("请取消注释示例代码并填入实际参数来下单")
+    #     except Exception as e:
+    #         print(f"E: {e}")
 
 
 if __name__ == "__main__":
