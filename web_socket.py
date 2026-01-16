@@ -276,7 +276,7 @@ if __name__ == "__main__":
     api_secret = ""
     api_passphrase = ""
 
-    r, suffix = 1, "1768460400" # put the first bitcoin 15 min market suffix here, e.g. https://polymarket.com/event/btc-updown-15m-1768266900 <-- this
+    r, suffix = 1, "1768524300" # put the first bitcoin 15 min market suffix here, e.g. https://polymarket.com/event/btc-updown-15m-1768266900 <-- this
     while True:
         suffix = get_next_suffix(r, suffix)
         slug = f"btc-updown-15m-{suffix}"
