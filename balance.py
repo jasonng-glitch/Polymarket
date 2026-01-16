@@ -17,7 +17,7 @@ HOST = "https://clob.polymarket.com"
 CHAIN_ID = 137  # Polygon mainnet
 PRIVATE_KEY = os.getenv("POLYMARKET_PRIVATE_KEY")
 SIGNATURE_TYPE = int(os.getenv("POLYMARKET_SIGNATURE_TYPE", "1"))
-FUNDER = os.getenv("POLYMARKET_FUNDER", "")
+FUNDER = os.getenv("POLYMARKET_FUNDER_E", "")
 
 
 def create_client() -> ClobClient:
@@ -143,21 +143,21 @@ def get_balance(client: ClobClient) -> dict:
         result = client.get_balance_allowance(params)
         
         if isinstance(result, dict):
-            balance_raw = result.get("balance", "0")
-            allowance_raw = result.get("allowance", "0")
-            
+            balance_raw = result.get("balance", "-1")
+            allowances_raw = result["allowances"]
+
             balance_wei = float(balance_raw)
-            allowance_wei = float(allowance_raw)
             
             # USDC 有 6 位小数
             balance_usdc = balance_wei / 1_000_000
-            allowance_usdc = allowance_wei / 1_000_000
+            allowances_usdc = [float(allowance_wei) / 1_000_000 for allowance_wei in allowances_raw.values()]
             
             return {
                 "balance_usdc": balance_usdc,
-                "allowance_usdc": allowance_usdc,
                 "balance_raw": balance_raw,
-                "allowance_raw": allowance_raw
+                "allowance(CTF Exchange)": allowances_usdc[0],
+                "allowance(Neg Risk CTF Exchange)": allowances_usdc[1],
+                "allowance(Neg Risk Adapter)": allowances_usdc[2],
             }
         else:
             return {"error": f"意外的响应格式: {result}"}
@@ -289,6 +289,7 @@ def main():
         # 创建客户端
         print("\n1. 初始化客户端...")
         client = create_client()
+        # print(dir(client))
         address = client.get_address()
         print(f"   ✓ 钱包地址: {address}")
         print(f"   ✓ 客户端初始化成功")
@@ -301,14 +302,15 @@ def main():
             print(f"   ✗ 错误: {balance_info['error']}")
         else:
             print(f"   💰 USDC 余额: ${balance_info['balance_usdc']:.6f}")
-            print(f"   🔓 授权额度: ${balance_info['allowance_usdc']:.6f}")
-            print(f"   原始余额: {balance_info['balance_raw']}")
-            print(f"   原始授权: {balance_info['allowance_raw']}")
+            print(f"   🔓 授权额度: ${balance_info['allowance(CTF Exchange)']:.6f}, ${balance_info['allowance(Neg Risk CTF Exchange)']:.6f}, ${balance_info['allowance(Neg Risk Adapter)']:.6f}")
+            # print(f"   原始余额: {balance_info['balance_raw']}")
+            # print(f"   原始授权: {balance_info['allowance_raw']}")
         
         # 获取持仓
         print("\n3. 查询当前持仓...")
         positions = get_positions(client)
         
+        show = 5
         if positions:
             # 分类显示
             trades = [p for p in positions if p.get("data_type") == "trade"]
@@ -316,7 +318,7 @@ def main():
             
             if trades:
                 print(f"\n   📜 历史订单 ({len(trades)} 个):")
-                for i, pos in enumerate(trades[:10], 1):
+                for i, pos in enumerate(trades[:show], 1):
                     print(f"\n   历史订单 {i}:")
                     print(f"     市场名称: {pos.get('market_name', pos.get('market', '未知'))}")
                     print(f"     市场ID: {pos.get('market', '')[:20]}...")
@@ -340,12 +342,12 @@ def main():
                     if pos.get('transaction_hash'):
                         print(f"     交易哈希: {pos.get('transaction_hash')}")
                 
-                if len(trades) > 10:
-                    print(f"\n   ... 还有 {len(trades) - 10} 个历史订单未显示")
+                if len(trades) > show:
+                    print(f"\n   ... 还有 {len(trades) - show} 个历史订单未显示")
             
             if orders:
                 print(f"\n   📋 未完成订单 ({len(orders)} 个):")
-                for i, pos in enumerate(orders[:5], 1):
+                for i, pos in enumerate(orders[:show], 1):
                     print(f"\n   订单 {i} (挂单):")
                     print(f"     市场名称: {pos.get('market_name', pos.get('market', '未知'))}")
                     print(f"     市场ID: {pos.get('market', '')[:20]}...")
@@ -367,8 +369,8 @@ def main():
                     print(f"     时间戳: {created_at} (创建时间: {created_at_readable})")
                     print(f"     状态: {pos.get('status', '')}")
                 
-                if len(orders) > 5:
-                    print(f"\n   ... 还有 {len(orders) - 5} 个订单未显示")
+                if len(orders) > show:
+                    print(f"\n   ... 还有 {len(orders) - show} 个订单未显示")
         else:
             print("   ✓ 当前没有持仓或订单")
         

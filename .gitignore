@@ -1,1 +1,6 @@
-listening.csv
+*.csv
+
+ipynb_scripts/
+old_codes/
+
+z*

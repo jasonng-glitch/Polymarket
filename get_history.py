@@ -39,7 +39,7 @@ def load_existing_records():
     with open(RESULTS_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            records[row["event"]] = row["outcome"]
+            records[row["event"]] = ["-", row["outcome"]]
 
     return records
 
@@ -52,9 +52,9 @@ def write_sorted_csv(records):
 
     with open(RESULTS_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["event", "outcome"])
+        writer.writerow(["event", "suffix", "outcome"])
         for key, value in records.items():
-            writer.writerow([key, value[1]])
+            writer.writerow([key, value[0], value[1]])
 
 
 # ---------------------------
@@ -152,14 +152,14 @@ def get_info_from_slug(slug):
 
 def main():
     # Ensure CSV exists
-    if not os.path.exists(RESULTS_FILE):
-        with open(RESULTS_FILE, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["event", "outcome"])
+    # if not os.path.exists(RESULTS_FILE):
+    #     with open(RESULTS_FILE, "w", newline="", encoding="utf-8") as f:
+    #         writer = csv.writer(f)
+    #         writer.writerow(["event", "suffix", "outcome"])
 
     records = load_existing_records()
 
-    r, suffix = 1, "1768446000"
+    r, suffix = 1, "1768475700"
 
     fail_count = 0
     while True:
@@ -177,6 +177,8 @@ def main():
                             f"⚠ Outcome mismatch for {event}: "
                             f"{records[event]} vs {outcome}"
                         )
+                        print(records[event][1])
+                        print(outcome)
                 else:
                     records[event] = [suffix, outcome]
                     print(f"✔ Added {event} → {[suffix, outcome]}")
@@ -191,6 +193,7 @@ def main():
                 break
 
     # Final write (sorted)
+    print(records)
     sorted_records = dict(sorted(records.items(), key=lambda x: int(x[1][0])))
     write_sorted_csv(sorted_records)
     print("✅ CSV updated and sorted. Exiting cleanly.")
