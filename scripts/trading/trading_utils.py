@@ -1,4 +1,5 @@
 import sys
+from datetime import timedelta
 
 def clear_terminal():
     # ANSI clear screen + move cursor to top-left

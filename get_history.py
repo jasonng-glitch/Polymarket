@@ -7,6 +7,7 @@ import csv
 import os
 import sys
 from datetime import datetime, timezone
+import argparse
 
 RESULTS_FILE = "./data/results_script.csv"
 
@@ -39,7 +40,7 @@ def load_existing_records():
     with open(RESULTS_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            records[row["event"]] = ["-", row["outcome"]]
+            records[row["event"]] = [row["suffix"], row["outcome"]]
 
     return records
 
@@ -151,15 +152,13 @@ def get_info_from_slug(slug):
 # ---------------------------
 
 def main():
-    # Ensure CSV exists
-    # if not os.path.exists(RESULTS_FILE):
-    #     with open(RESULTS_FILE, "w", newline="", encoding="utf-8") as f:
-    #         writer = csv.writer(f)
-    #         writer.writerow(["event", "suffix", "outcome"])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--suffix',help="Market suffix to start with")
+    args = parser.parse_args()
 
     records = load_existing_records()
 
-    r, suffix = 1, "1768475700"
+    r, suffix = 1, args.suffix if args.suffix else "1768539600"
 
     fail_count = 0
     while True:

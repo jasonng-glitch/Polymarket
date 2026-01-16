@@ -93,13 +93,10 @@ class WebSocketOrderBook:
         self.printed_buy_messages = False
         self.printed_sell_messages = False
         self.printed_event_messages = False
-        # self.printed_up_messages = False
-        # self.printed_down_messages = False
-        self.up_message = ""
-        self.down_message = ""
-        self.printed_up_down_messages = False
+        self.printed_up_messages = False
+        self.printed_down_messages = False
         self.intervals = list(range(120, 781, 60)) # [180, 300, 420, 600]
-        
+
         print(f"Init. WebSocketOrderBook with sell_price: {sell_price}")
 
     def on_message(self, ws, message):
@@ -152,9 +149,8 @@ class WebSocketOrderBook:
                 now_sec = int(int(message["timestamp"]) / 1000)
                 if self.current_sec != now_sec:
                     clear_terminal() # mimic live update
-                    self.up_message, self.down_message = "", ""
-                    self.printed_buy_messages, self.printed_sell_messages, self.printed_event_messages, self.printed_up_down_messages = False, False, False, False
-                    self.current_sec = now_sec
+                    self.printed_buy_messages, self.printed_sell_messages, self.printed_event_messages, self.printed_up_messages, self.printed_down_messages = False, False, False, False, False
+                    self.current_sec = now_sec+5
                     self.seen_pick = {"UP": False, "DOWN": False}
 
                 if 'price_changes' in message:
@@ -191,32 +187,21 @@ class WebSocketOrderBook:
 
                         if not self.printed_event_messages:
                             print(self.event_name)
-                            print(f"{'TRADED' if self.traded else 'WAITING'} | {timestamp} | {time_left}s left | {message['event_type']}")
+                            print(f"{'TRADED' if self.traded else 'WAITING'} | {timestamp} | {time_left}s left")
                             self.printed_event_messages = True
 
-                        if buy_pick == "UP" and not self.up_message:
-                            self.up_message = f"{buy_pick} | Price: {buy_price} | Size: {buy_size} | Best Bid: {buy_best_bid} | Best Ask: {buy_best_ask}"
+                        if buy_pick == "UP" and not self.printed_up_messages:
+                            print(f"{buy_pick} | Price: {buy_price} | Size: {buy_size} | Best Bid: {buy_best_bid} | Best Ask: {buy_best_ask}")
+                            self.printed_up_messages = True
 
-                        if buy_pick == "DOWN" and not self.down_message:
-                            self.down_message = f"{buy_pick} | Price: {buy_price} | Size: {buy_size} | Best Bid: {buy_best_bid} | Best Ask: {buy_best_ask}"
-
-                        if self.up_message and self.down_message and not self.printed_up_down_messages:
-                            print(self.up_message)
-                            print(self.down_message)
-                            self.printed_up_down_messages = True
-
-                        # if buy_pick == "UP" and not self.printed_up_messages:
-                        #         print(f"{buy_pick} | Price: {buy_price} | Size: {buy_size} | Best Bid: {buy_best_bid} | Best Ask: {buy_best_ask}")
-                        #         self.printed_up_messages = True
-
-                        # if buy_pick == "DOWN" and not self.printed_down_messages:
-                        #         print(f"{buy_pick} | Price: {buy_price} | Size: {buy_size} | Best Bid: {buy_best_bid} | Best Ask: {buy_best_ask}")
-                        #         self.printed_down_messages = True
+                            if buy_pick == "DOWN" and not self.printed_down_messages: # print UP first
+                                print(f"{buy_pick} | Price: {buy_price} | Size: {buy_size} | Best Bid: {buy_best_bid} | Best Ask: {buy_best_ask}")
+                                self.printed_down_messages = True
 
 
                         if not self.traded:
                             if time_left in self.intervals:
-                                if self.sell_price - 0.01 > float(buy_best_ask) and float(buy_best_ask) > data_dict[time_left]:
+                                if self.sell_price - 0.01 >= float(buy_best_ask) and float(buy_best_ask) > data_dict[time_left]:
                                     
                                     cur_size = 1.1/float(buy_best_ask)
 
@@ -244,9 +229,7 @@ class WebSocketOrderBook:
                                         for wait_round in range(0, 3):
                                             print(f"Buy order placed. Waiting round {wait_round+1} (Max 3 times) of 30 seconds to place sell order")
                                             time.sleep(30) # wait for some time before placing an order
-                                            
-                                            sell_size = math.floor(cur_size * 100) / 100-0.1 #round down to the nearest 2 digits
-                                            
+
                                             try:
                                                 print(f"Check client existence: {client}") # check if active
 
@@ -255,23 +238,22 @@ class WebSocketOrderBook:
                                                     side='SELL',
                                                     token_id=buy_asset_id,
                                                     price=self.sell_price,
-                                                    size=sell_size-0.01,
+                                                    size=cur_size,
                                                     tif="GTC",
                                                 )
 
                                                 self.sell_message = f"{'-'*80}\nSent SELL order at {time_left}\n{'-'*80}"
-                                            
+                                                print(self.sell_message)
+
                                                 with open(csv_file, mode="a", newline="") as file:
                                                     writer = csv.writer(file)
-                                                    writer.writerow([timestamp, self.event_name, 'SELL', 'SUCCESS', time_left, buy_pick, sell_size, self.sell_price, response])
-                                                
-                                                break
+                                                    writer.writerow([timestamp, self.event_name, 'SELL', 'SUCCESS', time_left, buy_pick, cur_size, self.sell_price, response])
 
                                             except Exception as e:
                                                 print(f"Error while trading: {e}")
                                                 with open(csv_file, mode="a", newline="") as file:
                                                     writer = csv.writer(file)
-                                                    writer.writerow([timestamp, self.event_name, 'SELL', 'FAILED', time_left, buy_pick, sell_size, buy_best_ask, e])
+                                                    writer.writerow([timestamp, self.event_name, 'SELL', 'FAILED', time_left, buy_pick, cur_size, buy_best_ask, e])
 
                                     except Exception as e:
                                         print(f"Error while trading: {e}")
@@ -360,23 +342,47 @@ if __name__ == "__main__":
     r, suffix = 1, args.suffix if args.suffix else "1768539600" # put the first bitcoin 15 min market suffix here, e.g. https://polymarket.com/event/btc-updown-15m-1768266900 <-- this
     while True:
         suffix = get_next_suffix(r, suffix) # script to auto get next index
-        slug = f"btc-updown-15m-{suffix}"
-        clobTokenId, clobTokenId2, conditionId, event_name = get_clobTokenIds_from_slug(slug)
 
-        asset_ids = [clobTokenId, clobTokenId2]
-
+        coins = {
+            "BTC": "btc-updown-15m",
+            "ETH": "eth-updown-15m",
+            "SOL": "sol-updown-15m",
+            "XRP": "xrp-updown-15m",
+        }
+        btc_slug = f"btc-updown-15m-{suffix}"
+        eth_slug = f"eth-updown-15m-{suffix}"
+        sol_slug = f"sol-updown-15m-{suffix}"
+        xrp_slug = f"xrp-updown-15m-{suffix}"
+        
         auth = {"apiKey": api_key, "secret": api_secret, "passphrase": api_passphrase}
         
-        market_connection = WebSocketOrderBook(
-            settings, MARKET_CHANNEL, url, asset_ids, auth, None, True, event_name, sell_price
-        )
+        threads = []
+        for coin, slug_prefix in coins.items():
+            slug = f"{slug_prefix}-{suffix}"
 
-        # threading.Thread(target=market_connection.run, daemon=True).start()
-        t = threading.Thread(target=market_connection.run)
-        t.start()
+            try:
+                clobTokenId1, clobTokenId2, conditionId, event_name = get_clobTokenIds_from_slug(slug)
+            except Exception as e:
+                print(f"[{coin}] Failed to load market: {e}")
+                continue
 
-        # wait until websocket exits (PONG logic triggers ws.close())
-        t.join()
+            asset_ids = [clobTokenId1, clobTokenId2]
+
+            market_connection = WebSocketOrderBook(
+                settings, MARKET_CHANNEL, url, asset_ids, auth, None, True, f"{coin} | {event_name}", sell_price
+            )
+
+            t = threading.Thread(
+                target=market_connection.run,
+                name=f"{coin}-ws"
+            )
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
+
+        print("All markets ended, moving to next suffix...")
 
         # market_connection.subscribe_to_tokens_ids(asset_ids)
         # market_connection.unsubscribe_to_tokens_ids(asset_ids)
